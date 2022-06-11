@@ -2,6 +2,8 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using UnityEngine.InputSystem.EnhancedTouch;
+using Touch = UnityEngine.InputSystem.EnhancedTouch.Touch;
 
 public class BallHandler : MonoBehaviour
 {
@@ -23,13 +25,23 @@ public class BallHandler : MonoBehaviour
         SpawnBall();
     }
 
+    void OnEnable()
+    {
+        EnhancedTouchSupport.Enable();
+    }
+
+    void OnDisable()
+    {
+        EnhancedTouchSupport.Disable();
+    }
+
     // Update is called once per frame
     void Update()
     {
         if (currentBallRigidBody == null) 
             return;
 
-        if (!Touchscreen.current.primaryTouch.press.isPressed)
+        if (Touch.activeTouches.Count == 0)
         {
             if (isDragging)
                 LaunchBall();
@@ -43,8 +55,16 @@ public class BallHandler : MonoBehaviour
         // Take rigid body out of physics control
         currentBallRigidBody.isKinematic = true;
 
-        Vector2 touchPostion = Touchscreen.current.primaryTouch.position.ReadValue();
-        Vector3 worldPosition = mainCamera.ScreenToWorldPoint(touchPostion);
+        Vector2 touchPosition = new Vector2();
+
+        foreach (Touch touch in Touch.activeTouches)
+        {
+            touchPosition += touch.screenPosition;
+        }
+        // Use average touch position if multiple touches
+        touchPosition /= Touch.activeTouches.Count;
+
+        Vector3 worldPosition = mainCamera.ScreenToWorldPoint(touchPosition);
 
         currentBallRigidBody.position = worldPosition;
     }
